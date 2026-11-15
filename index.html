@@ -260,4 +260,250 @@ fetch('./cards.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(list=>
 render();
 </script>
 </body>
+<!-- Firebase同期機能：index.htmlの最後の </body> の直前に追加 -->
+
+<style>
+  #cloudBox {
+    background: #fff0f8;
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #f2b5d5;
+    font-family: sans-serif;
+  }
+  #cloudBox input {
+    padding: 9px;
+    margin: 4px;
+    max-width: 220px;
+    border: 1px solid #e6a0c6;
+    border-radius: 8px;
+  }
+  #cloudBox button {
+    padding: 9px 13px;
+    margin: 4px;
+    background: #ec78b3;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  #cloudBox p {
+    font-size: 13px;
+  }
+</style>
+
+<section id="cloudBox">
+  <strong>♡ 3人の共有カードリスト ♡</strong>
+  <div id="cloudLoginArea">
+    <input id="cloudEmail" type="email"
+      placeholder="メールアドレス">
+    <input id="cloudPassword" type="password"
+      placeholder="パスワード">
+    <button id="cloudLoginButton">ログイン</button>
+  </div>
+  <div id="cloudUserArea" hidden>
+    <span id="cloudUserName"></span>
+    <button id="cloudLogoutButton">ログアウト</button>
+    <button id="cloudInitializeButton" hidden>
+      この端末の所持データを共有リストに登録
+    </button>
+  </div>
+  <p id="cloudStatus">Firebaseに接続しています…</p>
+</section>
+
+<script type="module">
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  onSnapshot,
+  updateDoc,
+  runTransaction,
+  serverTimestamp,
+  FieldPath
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCp8FbMp9kjFi-pq8QyDpttj2qI5VV6Cr4",
+  authDomain: "aikatsu-card-checker.firebaseapp.com",
+  projectId: "aikatsu-card-checker",
+  storageBucket: "aikatsu-card-checker.firebasestorage.app",
+  messagingSenderId: "758109639935",
+  appId: "1:758109639935:web:c11235f2dc093cc594e8ca",
+  measurementId: "G-R10WLMNWH0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const sharedRef = doc(db, "sharedLists", "our-cards");
+
+const cloud = id => document.getElementById(id);
+const LOCAL_KEY = "aikatsu-checker-owned-v1";
+
+let cloudReady = false;
+let currentUser = null;
+let unsubscribe = null;
+
+function status(message) {
+  cloud("cloudStatus").textContent = message;
+}
+
+function sanitize(data) {
+  const result = {};
+  if (!data || typeof data !== "object") return result;
+  for (const [key, value] of Object.entries(data)) {
+    if (Number.isInteger(value) &&
+        value >= 0 && value <= 999 &&
+        key.length < 100) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function getLocalData() {
+  try {
+    return sanitize(JSON.parse(
+      localStorage.getItem(LOCAL_KEY) || "{}"
+    ));
+  } catch {
+    return {};
+  }
+}
+
+// 既存アプリから呼び出す同期機能
+window.__aikatsuShared = {
+  isReady: () => cloudReady,
+
+  saveCard: async (id, quantity) => {
+    if (!cloudReady) return;
+    try {
+      await updateDoc(
+        sharedRef,
+        new FieldPath("amounts", id),
+        quantity,
+        "updatedAt",
+        serverTimestamp()
+      );
+    } catch (error) {
+      status("保存エラー：" + error.message);
+    }
+  },
+
+  replaceAll: async () => {
+    throw new Error(
+      "共有データの一括上書きは安全のため無効です"
+    );
+  }
+};
+
+// ログイン
+cloud("cloudLoginButton").onclick = async () => {
+  try {
+    status("ログイン中…");
+    await signInWithEmailAndPassword(
+      auth,
+      cloud("cloudEmail").value.trim(),
+      cloud("cloudPassword").value
+    );
+    cloud("cloudPassword").value = "";
+  } catch (error) {
+    status("ログイン失敗：" + error.code);
+  }
+};
+
+// ログアウト
+cloud("cloudLogoutButton").onclick = () => signOut(auth);
+
+// 初回のみ共有データを作成
+cloud("cloudInitializeButton").onclick = async () => {
+  if (!currentUser || cloudReady) return;
+
+  const local = getLocalData();
+  const total = Object.values(local).filter(v => v > 0).length;
+
+  if (!confirm(
+    `この端末の所持記録（${total}種類）を` +
+    "3人の共有リストに登録しますか？"
+  )) return;
+
+  try {
+    await runTransaction(db, async transaction => {
+      const snapshot = await transaction.get(sharedRef);
+
+      if (snapshot.exists()) {
+        throw new Error("共有リストはすでに存在します");
+      }
+
+      transaction.set(sharedRef, {
+        amounts: local,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    status("共有リストを作成しました！");
+  } catch (error) {
+    status("初期登録エラー：" + error.message);
+  }
+};
+
+// ログイン状態を監視
+onAuthStateChanged(auth, user => {
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+
+  currentUser = user;
+  cloudReady = false;
+
+  cloud("cloudLoginArea").hidden = !!user;
+  cloud("cloudUserArea").hidden = !user;
+  cloud("cloudInitializeButton").hidden = true;
+
+  if (!user) {
+    status("未ログイン");
+    if (window.__aikatsuLocal) {
+      window.__aikatsuLocal.restoreView();
+    }
+    return;
+  }
+
+  cloud("cloudUserName").textContent = user.email;
+  status("共有データを読み込み中…");
+
+  unsubscribe = onSnapshot(sharedRef, snapshot => {
+    if (snapshot.exists()) {
+      cloudReady = true;
+      cloud("cloudInitializeButton").hidden = true;
+
+      const shared = sanitize(snapshot.data().amounts);
+
+      if (window.__aikatsuLocal) {
+        window.__aikatsuLocal.setView(shared);
+      }
+
+      status("♡ 3人の共有リストに接続中");
+    } else {
+      cloudReady = false;
+      cloud("cloudInitializeButton").hidden = false;
+      status("共有リストの初期登録が必要です");
+    }
+  }, error => {
+    cloudReady = false;
+    status("同期エラー：" + error.message);
+  });
+});
+</script>
+
 </html>
