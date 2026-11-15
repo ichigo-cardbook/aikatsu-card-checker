@@ -1,0 +1,362 @@
+[
+  {
+    "id": "E1-01_PR_p1",
+    "number": "E1-01_PR_p1",
+    "name": "オーロラキスキャミソール",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-01_PR_p1.webp"
+  },
+  {
+    "id": "E1-02_PR_p1",
+    "number": "E1-02_PR_p1",
+    "name": "オーロラキスドレープスカート",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-02_PR_p1.webp"
+  },
+  {
+    "id": "E1-03_PR_p1",
+    "number": "E1-03_PR_p1",
+    "name": "オーロラキスバレエシューズ",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-03_PR_p1.webp"
+  },
+  {
+    "id": "E1-04_PR_p1",
+    "number": "E1-04_PR_p1",
+    "name": "オーロラキスリボン",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-04_PR_p1.webp"
+  },
+  {
+    "id": "E1-30_ER_p1",
+    "number": "E1-30_ER_p1",
+    "name": "オデットスワン",
+    "rarity": "ER",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-30_ER_p1.webp"
+  },
+  {
+    "id": "E1-31_ER_p1",
+    "number": "E1-31_ER_p1",
+    "name": "リルリボンストーリー",
+    "rarity": "ER",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-31_ER_p1.webp"
+  },
+  {
+    "id": "E1-32_ER_p1",
+    "number": "E1-32_ER_p1",
+    "name": "オーロラペガサス",
+    "rarity": "ER",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-32_ER_p1.webp"
+  },
+  {
+    "id": "E1-33_PR_p1",
+    "number": "E1-33_PR_p1",
+    "name": "天の川コズミックワンショルダー",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-33_PR_p1.webp"
+  },
+  {
+    "id": "E1-34_PR_p1",
+    "number": "E1-34_PR_p1",
+    "name": "天の川コズミックスカート",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-34_PR_p1.webp"
+  },
+  {
+    "id": "E1-35_PR_p1",
+    "number": "E1-35_PR_p1",
+    "name": "天の川コズミックブーツ",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-35_PR_p1.webp"
+  },
+  {
+    "id": "E1-36_PR_p1",
+    "number": "E1-36_PR_p1",
+    "name": "天の川コズミックカチューシャ",
+    "rarity": "PR",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-36_PR_p1.webp"
+  },
+  {
+    "id": "E1-50_ER_p1",
+    "number": "E1-50_ER_p1",
+    "name": "ドリームエミネンス",
+    "rarity": "ER",
+    "group": "parallel",
+    "image": "https://card-search.com/card-img/aikatsu-encore/m/E1-50_ER_p1.webp"
+  },
+  {
+    "id": "EP-001_N",
+    "number": "EP-001_N",
+    "name": "ピンクステージベスト＆スカート",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-001_N.webp"
+  },
+  {
+    "id": "EP-002_PR",
+    "number": "EP-002_PR",
+    "name": "レジェンダリールージュティアラ",
+    "rarity": "PR",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-002_PR.webp"
+  },
+  {
+    "id": "EP-003_N",
+    "number": "EP-003_N",
+    "name": "エメラルドコクーンワンピ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-003_N.webp"
+  },
+  {
+    "id": "EP-004_N",
+    "number": "EP-004_N",
+    "name": "エメラルドアゲハミュール",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-004_N.webp"
+  },
+  {
+    "id": "EP-005_N",
+    "number": "EP-005_N",
+    "name": "ピンクシフォンカチューシャ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-005_N.webp"
+  },
+  {
+    "id": "EP-006_N",
+    "number": "EP-006_N",
+    "name": "ピンクリボンつきフリルシャツ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-006_N.webp"
+  },
+  {
+    "id": "EP-007_N",
+    "number": "EP-007_N",
+    "name": "ピンクアーガイルカーデ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-007_N.webp"
+  },
+  {
+    "id": "EP-008_N",
+    "number": "EP-008_N",
+    "name": "ピンクプリーツスカート",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-008_N.webp"
+  },
+  {
+    "id": "EP-009_N",
+    "number": "EP-009_N",
+    "name": "ガーリーローファー",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-009_N.webp"
+  },
+  {
+    "id": "EP-010_N",
+    "number": "EP-010_N",
+    "name": "ピンクリボンカチューシャ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-010_N.webp"
+  },
+  {
+    "id": "EP-011_N",
+    "number": "EP-011_N",
+    "name": "スターライト学園ピンクジャージ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-011_N.webp"
+  },
+  {
+    "id": "EP-012_N",
+    "number": "EP-012_N",
+    "name": "スターライト学園ブルージャージ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-012_N.webp"
+  },
+  {
+    "id": "EP-013_N",
+    "number": "EP-013_N",
+    "name": "スターライト学園パープルジャージ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-013_N.webp"
+  },
+  {
+    "id": "EP-014_N",
+    "number": "EP-014_N",
+    "name": "スターライト学園オレンジジャージ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-014_N.webp"
+  },
+  {
+    "id": "EP-015_N",
+    "number": "EP-015_N",
+    "name": "スターライト学園スニーカー",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-015_N.webp"
+  },
+  {
+    "id": "EP-016_N",
+    "number": "EP-016_N",
+    "name": "ブラックダイヤモンドジュエリーワンピ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-016_N.webp"
+  },
+  {
+    "id": "EP-017_N",
+    "number": "EP-017_N",
+    "name": "ピンクの小花柄ワンピ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-017_N.webp"
+  },
+  {
+    "id": "EP-018_N",
+    "number": "EP-018_N",
+    "name": "編み上げラベンダーブーツ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-018_N.webp"
+  },
+  {
+    "id": "EP-019_N",
+    "number": "EP-019_N",
+    "name": "エンジェリーベアフリルトップス",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-019_N.webp"
+  },
+  {
+    "id": "EP-020_N",
+    "number": "EP-020_N",
+    "name": "エンジェリーベアパステルスカート",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-020_N.webp"
+  },
+  {
+    "id": "EP-021_N",
+    "number": "EP-021_N",
+    "name": "エンジェリーベアスニーカー",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-021_N.webp"
+  },
+  {
+    "id": "EP-022_N",
+    "number": "EP-022_N",
+    "name": "エンジェリーベアリボン",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-022_N.webp"
+  },
+  {
+    "id": "EP-029_R",
+    "number": "EP-029_R",
+    "name": "スターライト学園制服",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-029_R.webp"
+  },
+  {
+    "id": "EP-030_R",
+    "number": "EP-030_R",
+    "name": "スターライト学園ブーツ",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-030_R.webp"
+  },
+  {
+    "id": "EP-031_R",
+    "number": "EP-031_R",
+    "name": "ガーリーデビルトップス",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-031_R.webp"
+  },
+  {
+    "id": "EP-032_R",
+    "number": "EP-032_R",
+    "name": "ガーリーデビルスカート",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-032_R.webp"
+  },
+  {
+    "id": "EP-033_R",
+    "number": "EP-033_R",
+    "name": "ガーリーデビルパンプス",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-033_R.webp"
+  },
+  {
+    "id": "EP-034_R",
+    "number": "EP-034_R",
+    "name": "モンスターキャットトップス",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-034_R.webp"
+  },
+  {
+    "id": "EP-035_R",
+    "number": "EP-035_R",
+    "name": "モンスターキャットスカート",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-035_R.webp"
+  },
+  {
+    "id": "EP-036_R",
+    "number": "EP-036_R",
+    "name": "モンスターキャットファーブーツ",
+    "rarity": "R",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-036_R.webp"
+  },
+  {
+    "id": "EP-037_N",
+    "number": "EP-037_N",
+    "name": "エンブレムつきセーラーマリントップス＆スカート",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-037_N.webp"
+  },
+  {
+    "id": "EP-038_N",
+    "number": "EP-038_N",
+    "name": "ブルーワークブーツ",
+    "rarity": "N",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-038_N.webp"
+  },
+  {
+    "id": "EP-042_PR",
+    "number": "EP-042_PR",
+    "name": "たまごっちパラダイスカチューシャ",
+    "rarity": "PR",
+    "group": "promo",
+    "image": "https://dcd.aikatsu.com/encore/images/cardlist/card/EP-042_PR.webp"
+  }
+]
