@@ -31,7 +31,19 @@
     input[type=search]{width:100%;border:1px solid #edb3d3;border-radius:9px;padding:11px;font-size:16px}
     #cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 8px 26px;max-width:860px;margin:auto}
     .card{position:relative;min-width:0;border:0;background:#f1e7ef;padding:0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px #8e678844;aspect-ratio:460 / 670;touch-action:manipulation}
-    .card img{display:block;width:100%;height:100%;object-fit:cover;filter:grayscale(1);transition:filter .15s}
+    /* すべてのカードは同じ縦長サイズ・同じ3列（PCでは5列）に揃える。 */
+    .card{align-self:start}
+    .card img{display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1);transition:filter .15s}
+    /* 横向きのアクセサリーは【画像のみ】右回りに90°回転。
+       外側のカード枠は一切回転・拡大せず、他のカードと同じサイズのまま。
+       回転前の画像枠の幅=カードの高さ、画像枠の高さ=カードの幅とすることで、
+       回転後も見切れず枠内にぴったり収まる（object-fit:contain）。 */
+    .card.rotate-image img{
+      position:absolute;left:50%;top:50%;
+      width:145.6522%;height:68.6567%;max-width:none;
+      transform:translate(-50%,-50%) rotate(90deg);
+      transform-origin:center center;
+    }
     .card.owned img{filter:none}
     .card .count{position:absolute;right:3px;top:3px;min-width:29px;height:29px;padding:0 5px;display:grid;place-items:center;border-radius:40px;background:#ff4f6d;color:white;font-size:15px;font-weight:700;border:1px solid #fff8}
     .card .id-label{position:absolute;bottom:0;left:0;right:0;background:#ffffffd9;color:#5c3652;text-align:center;padding:3px 0;font-size:10px;font-weight:600;display:none}
@@ -86,7 +98,7 @@
 <footer>カード画像 ©BNP/BANDAI, DENTSU, TV TOKYO ほか各権利者<br>
 画像は公式サイト上のファイルを参照しています。<br>
 <a href="https://dcd.aikatsu.com/encore/cardlist/" target="_blank" rel="noopener">公式カードリスト</a><br><br>
-個人用の試作版：現在は1弾の通常85枚に対応。パラレル・プロモは次の作業で追加します。</footer>
+個人用の試作版：1弾の通常85枚＋cards.jsonのパラレル・プロモに対応。</footer>
 <script>
 'use strict';
 // 公式カードリストで確認できた1弾85種類のレアリティ
@@ -108,6 +120,16 @@ try { amounts=JSON.parse(localStorage.getItem(KEY)||'{}'); if(!amounts||typeof a
 catch(e){ amounts={}; }
 const state={tab:'all',owner:'all',rarity:'all',search:''};
 const $=id=>document.getElementById(id);
+// アクセサリーカードの番号。通常・パラレル・プロモすべてで共通判定する。
+// これ以外のカードでも画像ファイル自体が横長なら、自動的に右回り90度回転する。
+const accessoryCodes = new Set([
+ 'E1-04','E1-08','E1-16','E1-20','E1-36','E1-59',
+ 'E1-74','E1-78','E1-82','EP-002','EP-005','EP-010','EP-022','EP-042'
+]);
+function isAccessory(card){
+ const code=(card.id||card.number||'').match(/^(E\d+-\d{2}|EP-\d{3})(?:_|$)/)?.[1];
+ return card.orientation==='landscape'||accessoryCodes.has(code);
+}
 function count(card){return Math.max(0,Math.floor(Number(amounts[card.id])||0));}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(amounts));}catch(e){alert('端末にデータを保存できませんでした。Safariの保存設定を確認してください。');}}
 function cardSet(){return cards.filter(c=>state.tab==='all'||c.group===state.tab);}
@@ -124,7 +146,15 @@ function render(){
  for(const card of visible){
   const qty=count(card),button=document.createElement('button');
   button.className='card'+(qty?' owned':'');button.type='button';button.setAttribute('aria-label',`${card.number} ${qty}枚所持。タップで切り替え`);
-  const img=document.createElement('img');img.src=card.image;img.alt=card.number;img.loading='lazy';
+  const img=document.createElement('img');img.alt=card.number;img.loading='lazy';
+  // アクセサリーは画像自体を右回りに90°回転（通常サイズの枠の中で表示）。
+  // 番号が未登録でも画像の元サイズが横長なら、画像読込後に自動判定する。
+  if(isAccessory(card))button.classList.add('rotate-image');
+  img.onload=()=>{
+   const sourceIsLandscape=img.naturalWidth>img.naturalHeight*1.06;
+   button.classList.toggle('rotate-image',isAccessory(card)||sourceIsLandscape);
+  };
+  img.src=card.image;
   img.onerror=()=>button.classList.add('broken');
   button.append(img);
   const label=document.createElement('span');label.className='id-label';label.textContent=card.number;button.append(label);
