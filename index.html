@@ -1,325 +1,808 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#ef80b4">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="アイカツカード">
-  <title>アイカツ！カード所持チェッカー</title>
-  <style>
-    :root { --pink:#eb65a4; --pale:#fff0f8; --ink:#463c49; }
-    *{box-sizing:border-box}
-    body{margin:0;background:#fff8fc;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
-    header{background:linear-gradient(115deg,#f774b3,#ffa3cd);color:white;text-align:center;padding:20px 12px 14px;box-shadow:0 2px 9px #c9478029}
-    h1{font-size:clamp(20px,4.4vw,30px);line-height:1.45;font-weight:650;margin:0 0 11px;letter-spacing:.05em;text-shadow:0 1px 2px #a9478060}
-    .toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-    button{font:inherit;cursor:pointer}
-    .toolbar button{background:white;color:#c83f86;border:0;border-radius:22px;padding:9px 13px;font-weight:650;font-size:13px}
-    .tabs{display:flex;background:white;position:sticky;top:0;z-index:3;box-shadow:0 1px 4px #dfb2cf66;overflow-x:auto}
-    .tabs button{flex:1;min-width:73px;background:none;border:0;border-bottom:3px solid transparent;padding:12px 8px;color:#999;font-weight:650;white-space:nowrap}
-    .tabs button.active{border-bottom-color:var(--pink);color:var(--pink)}
-    .summary{padding:13px 13px 9px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:white}
-    .summary strong{color:#de4791;font-variant-numeric:tabular-nums}
-    .size-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;padding-top:2px}
-    .size-controls .size-label{font-size:12px;font-weight:650;color:#8c6982;margin-right:3px}
-    .size-controls button{border:1px solid #e69abc;color:#b74886;background:white;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:650;line-height:1.2}
-    .size-controls button.active{background:var(--pink);border-color:var(--pink);color:#fff}
-    .outline{background:white;color:var(--pink);border:2px solid #f18bbd;border-radius:11px;padding:8px 12px;font-weight:700}
-    #filters{display:none;margin:0 12px 12px;padding:12px;background:white;border:1px solid #f6b9da;border-radius:12px;box-shadow:0 4px 12px #eab6d21a}
-    #filters.open{display:block}
-    .filter-line{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 15px}
-    .chip{padding:7px 11px;border-radius:25px;border:1px solid #e98bbf;background:#fff;color:#b45384;font-size:13px}
-    .chip.selected{background:var(--pink);color:#fff;border-color:var(--pink)}
-    input[type=search]{width:100%;border:1px solid #edb3d3;border-radius:9px;padding:11px;font-size:16px}
-    #cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 8px 26px;max-width:860px;margin:auto}
-    /* iPhone: 標準3列／小4列／極小5列。カード全体の縦横比は変えない。 */
-    #cards[data-size="small"]{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px 6px 26px}
-    #cards[data-size="tiny"]{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:6px 4px 26px}
-    .card{position:relative;min-width:0;border:0;background:#f1e7ef;padding:0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px #8e678844;aspect-ratio:460 / 670;touch-action:manipulation}
-    /* すべてのカードは同じ縦長サイズ・同じ3列（PCでは5列）に揃える。 */
-    .card{align-self:start}
-    .card img{display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1);transition:filter .15s}
-    /* 横向きのアクセサリーは【画像のみ】右回りに90°回転。
-       外側のカード枠は一切回転・拡大せず、他のカードと同じサイズのまま。
-       回転前の画像枠の幅=カードの高さ、画像枠の高さ=カードの幅とすることで、
-       回転後も見切れず枠内にぴったり収まる（object-fit:contain）。 */
-    .card.rotate-image img{
-      position:absolute;left:50%;top:50%;
-      width:145.6522%;height:68.6567%;max-width:none;
-      transform:translate(-50%,-50%) rotate(90deg);
-      transform-origin:center center;
-    }
-    .card.owned img{filter:none}
-    .card .count{position:absolute;right:3px;top:3px;min-width:29px;height:29px;padding:0 5px;display:grid;place-items:center;border-radius:40px;background:#ff4f6d;color:white;font-size:15px;font-weight:700;border:1px solid #fff8}
-    #cards[data-size="small"] .count{min-width:24px;height:24px;font-size:12px}
-    #cards[data-size="tiny"] .count{min-width:20px;height:20px;font-size:11px;right:2px;top:2px;padding:0 3px}
-    .card .id-label{position:absolute;bottom:0;left:0;right:0;background:#ffffffd9;color:#5c3652;text-align:center;padding:3px 0;font-size:10px;font-weight:600;display:none}
-    .card.broken{display:flex;align-items:center;justify-content:center;padding:6px}
-    .card.broken .id-label{display:block}
-    .card.broken:before{content:'画像未取得';font-size:12px;color:#84627a}
-    .card.broken img{display:none}
-    .hint{padding:8px 13px;text-align:center;font-size:12px;color:#8e6680}
-    .empty{grid-column:1/-1;padding:45px 12px;text-align:center;color:#9a6687}
-    footer{text-align:center;padding:18px 14px 30px;font-size:11px;color:#927b8b}
-    footer a{color:#a34f7e}
-    @media(min-width:600px){
-      #cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;padding:16px}
-      #cards[data-size="small"]{grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;padding:13px}
-      #cards[data-size="tiny"]{grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;padding:10px}
-      #cards[data-size="normal"] .count{min-width:33px;height:33px}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f17db8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="アイカツカード">
+<title>アイカツ！カード所持チェッカー</title>
+
+<style>
+:root {
+  --pink:#e968a7;
+  --light:#fff0f8;
+  --text:#503d4a;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  background:#fff8fc;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,
+  "Hiragino Kaku Gothic ProN",sans-serif;
+}
+button,input {font:inherit}
+button {cursor:pointer}
+header {
+  background:linear-gradient(120deg,#f774b3,#ffa5cf);
+  color:white;
+  text-align:center;
+  padding:18px 10px;
+}
+h1 {font-size:23px;margin:0 0 12px}
+.tools {
+  display:flex;justify-content:center;
+  flex-wrap:wrap;gap:7px;
+}
+.tools button,.action {
+  border:0;border-radius:18px;
+  background:white;color:#c64084;
+  padding:9px 12px;font-weight:bold;
+}
+.syncbar {
+  display:flex;justify-content:center;
+  align-items:center;gap:10px;
+  flex-wrap:wrap;background:#fff0f8;
+  padding:9px;font-size:13px;
+}
+#syncStatus {font-weight:bold}
+#loginPanel {
+  display:none;
+  background:white;
+  max-width:700px;
+  margin:10px auto;
+  padding:15px;
+  border:1px solid #f4b9d8;
+  border-radius:12px;
+}
+#loginPanel.open {display:block}
+#loginPanel h2 {
+  color:#bd4888;font-size:17px;
+}
+#loginPanel input {
+  display:block;
+  width:100%;
+  padding:11px;
+  margin:8px 0;
+  border:1px solid #dfa6c4;
+  border-radius:9px;
+  font-size:16px;
+}
+.pinkbutton {
+  background:var(--pink);
+  color:white;border:0;
+  border-radius:9px;
+  padding:10px 14px;
+  font-weight:bold;
+}
+#loginMessage {
+  font-size:13px;
+  line-height:1.5;
+  color:#ad407d;
+}
+#userPanel,#initPanel {display:none}
+#initPanel {
+  padding:12px;
+  background:var(--light);
+  border-radius:10px;
+  margin-top:12px;
+}
+.tabs {
+  display:flex;overflow-x:auto;
+  position:sticky;top:0;z-index:5;
+  background:white;
+  box-shadow:0 1px 5px #dba6c6;
+}
+.tabs button {
+  flex:1;min-width:75px;
+  background:white;border:0;
+  padding:13px 6px;
+  border-bottom:3px solid transparent;
+  color:#999;font-weight:bold;
+}
+.tabs button.active {
+  color:var(--pink);
+  border-bottom-color:var(--pink);
+}
+.summary {
+  background:white;
+  padding:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+}
+#stats {color:#db438e;font-weight:bold}
+.sizebar {
+  width:100%;display:flex;
+  align-items:center;gap:6px;
+  flex-wrap:wrap;font-size:12px;
+}
+.sizebar button {
+  padding:7px 10px;
+  background:white;
+  border:1px solid #e69bbb;
+  border-radius:8px;
+  color:#b94a85;
+}
+.sizebar button.active {
+  background:var(--pink);
+  color:white;
+}
+#filters {
+  display:none;
+  padding:12px;
+  background:white;
+  margin:10px;
+  border:1px solid #f2b8d7;
+  border-radius:12px;
+}
+#filters.open {display:block}
+#search {
+  width:100%;
+  padding:10px;
+  border:1px solid #e9a6c8;
+  border-radius:8px;
+  font-size:16px;
+}
+.chips {
+  display:flex;flex-wrap:wrap;
+  gap:6px;margin:9px 0;
+}
+.chip {
+  border:1px solid #eaa2c6;
+  background:white;
+  border-radius:20px;
+  padding:7px 11px;
+  color:#b84c85;
+}
+.chip.active {
+  background:var(--pink);
+  color:white;
+}
+.hint {
+  text-align:center;
+  font-size:12px;
+  color:#9e738c;
+  padding:9px;
+}
+#cards {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:9px;
+  max-width:900px;
+  margin:auto;
+}
+#cards.small {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+}
+#cards.tiny {
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:4px;padding:5px;
+}
+.card {
+  position:relative;
+  width:100%;
+  aspect-ratio:460/670;
+  border:0;
+  border-radius:7px;
+  padding:0;
+  overflow:hidden;
+  background:#ece4eb;
+  box-shadow:0 1px 4px #967a9544;
+}
+.card img {
+  width:100%;height:100%;
+  object-fit:contain;
+  display:block;
+  filter:grayscale(1);
+}
+.card.owned img {filter:none}
+
+/* アクセサリー画像を右に90度回転。
+   カード枠の大きさは変えない。 */
+.card.rotate img {
+  position:absolute;
+  left:50%;top:50%;
+  width:145.6522%;
+  height:68.6567%;
+  max-width:none;
+  transform:translate(-50%,-50%) rotate(90deg);
+}
+.count {
+  position:absolute;
+  right:3px;top:3px;
+  min-width:25px;height:25px;
+  border-radius:20px;
+  background:#ff4e71;
+  color:white;
+  display:grid;
+  place-items:center;
+  font-weight:bold;
+  font-size:13px;
+  padding:0 4px;
+}
+#cards.tiny .count {
+  min-width:18px;height:18px;
+  font-size:10px;
+}
+.card.broken img {display:none}
+.card.broken::after {
+  content:attr(data-code);
+  position:absolute;top:45%;left:0;
+  width:100%;text-align:center;
+  font-size:12px;color:#8b6b82;
+}
+.empty {
+  grid-column:1/-1;
+  text-align:center;padding:40px;
+}
+footer {
+  text-align:center;
+  padding:20px;
+  font-size:11px;
+  color:#98778c;
+}
+footer a {color:#b54f87}
+@media(min-width:650px) {
+  #cards {
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:12px;
+  }
+  #cards.small {
+    grid-template-columns:repeat(7,minmax(0,1fr));
+  }
+  #cards.tiny {
+    grid-template-columns:repeat(9,minmax(0,1fr));
+  }
+}
+</style>
 </head>
+
 <body>
+
 <header>
   <h1>アイカツ！アンコール<br>カード所持率チェッカー</h1>
-  <div class="toolbar">
-    <button type="button" id="export">バックアップ保存</button>
-    <button type="button" id="import">データ復元</button>
-    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  <div class="tools">
+    <button id="exportBtn">バックアップ保存</button>
+    <button id="importBtn">データ復元</button>
+    <input type="file" id="importFile"
+      accept=".json,application/json" hidden>
   </div>
 </header>
-<nav class="tabs" id="tabs" aria-label="カードの種類">
+
+<div class="syncbar">
+  <span id="syncStatus">クラウド：接続準備中</span>
+  <button class="action" id="loginToggle">
+    ログイン・同期設定
+  </button>
+</div>
+
+<section id="loginPanel">
+  <h2>♡ 3人の共有カードリスト ♡</h2>
+
+  <form id="loginForm">
+    <input type="email" id="email"
+      autocomplete="username"
+      placeholder="メールアドレス" required>
+    <input type="password" id="password"
+      autocomplete="current-password"
+      placeholder="パスワード" required>
+    <button class="pinkbutton" type="submit">
+      ログイン
+    </button>
+  </form>
+
+  <div id="userPanel">
+    <p>ログイン中：<strong id="userName"></strong></p>
+    <button class="action" id="logoutBtn">
+      ログアウト
+    </button>
+  </div>
+
+  <p id="loginMessage"></p>
+
+  <div id="initPanel">
+    <strong>共有リストはまだありません。</strong>
+    <p>
+      最初の1回だけ、所持情報が登録されている
+      パソコンから共有リストを作成してね。
+    </p>
+    <button class="pinkbutton" id="initBtn">
+      この端末の所持データを共有リストに登録
+    </button>
+  </div>
+</section>
+
+<nav class="tabs" id="tabs">
   <button class="active" data-tab="all">すべて</button>
   <button data-tab="normal">1弾</button>
   <button data-tab="parallel">パラレル</button>
   <button data-tab="promo">プロモ</button>
 </nav>
+
 <section class="summary">
-  <button class="outline" type="button" id="toggleFilters">絞り込み ▾</button>
-  <span>所持：<strong id="stats">0 / 85 種（0.0%）</strong></span>
-  <div class="size-controls" id="sizeControls" aria-label="カードの表示サイズ">
-    <span class="size-label">表示サイズ</span>
-    <button type="button" data-size="normal" class="active" aria-pressed="true">標準</button>
-    <button type="button" data-size="small" aria-pressed="false">小さめ</button>
-    <button type="button" data-size="tiny" aria-pressed="false">もっと小さく</button>
+  <button class="action" id="filterToggle">
+    絞り込み ▾
+  </button>
+
+  <span>所持：<span id="stats">読み込み中</span></span>
+
+  <div class="sizebar" id="sizeBar">
+    <strong>表示サイズ</strong>
+    <button data-size="normal">標準</button>
+    <button data-size="small">小さめ</button>
+    <button data-size="tiny">もっと小さく</button>
   </div>
 </section>
-<section id="filters" aria-label="絞り込み">
+
+<section id="filters">
   <label for="search">カード番号で検索</label>
-  <input id="search" type="search" placeholder="例：E1-01" autocomplete="off">
-  <p>所持状態</p><div class="filter-line" id="ownershipFilters">
-    <button class="chip selected" data-owner="all">すべて</button>
+  <input type="search" id="search"
+    placeholder="例：E1-01">
+
+  <p>所持状態</p>
+  <div class="chips" id="ownerChips">
+    <button class="chip active" data-owner="all">すべて</button>
     <button class="chip" data-owner="owned">所持</button>
     <button class="chip" data-owner="missing">未所持</button>
   </div>
-  <p>レアリティ</p><div class="filter-line" id="rarityFilters">
-    <button class="chip selected" data-rarity="all">すべて</button>
+
+  <p>レアリティ</p>
+  <div class="chips" id="rarityChips">
+    <button class="chip active" data-rarity="all">すべて</button>
     <button class="chip" data-rarity="PR">PR</button>
     <button class="chip" data-rarity="R">R</button>
     <button class="chip" data-rarity="N">N</button>
     <button class="chip" data-rarity="ER">ER</button>
   </div>
 </section>
-<div class="hint">カードをタップで所持／未所持切替。所持枚数の数字をタップすると枚数を変更できます。</div>
-<main id="cards" aria-live="polite"></main>
-<footer>カード画像 ©BNP/BANDAI, DENTSU, TV TOKYO ほか各権利者<br>
-画像は公式サイト上のファイルを参照しています。<br>
-<a href="https://dcd.aikatsu.com/encore/cardlist/" target="_blank" rel="noopener">公式カードリスト</a><br><br>
-個人用の試作版：1弾の通常85枚＋cards.jsonのパラレル・プロモに対応。</footer>
+
+<p class="hint">
+  カードをタップで所持／未所持切替。
+  枚数の数字をタップすると所持枚数を変更できます。
+</p>
+
+<main id="cards"></main>
+
+<footer>
+  カード画像の権利は各権利者に帰属します。<br>
+  <a href="https://dcd.aikatsu.com/encore/cardlist/"
+     target="_blank" rel="noopener">
+    公式カードリスト
+  </a>
+</footer>
+
 <script>
-'use strict';
-// 公式カードリストで確認できた1弾85種類のレアリティ
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+// 既存アプリと同じ保存キー
+const KEY = "aikatsu-checker-owned-v1";
+const SIZE_KEY = "aikatsu-checker-card-size-v1";
+
+function cleanAmounts(value) {
+  const result = {};
+  if (!value || typeof value !== "object" ||
+      Array.isArray(value)) return result;
+
+  for (const [id,n] of Object.entries(value)) {
+    if (id.length < 100 &&
+        Number.isInteger(n) &&
+        n >= 0 && n <= 999) {
+      result[id] = n;
+    }
+  }
+  return result;
+}
+
+function readLocal() {
+  try {
+    return cleanAmounts(
+      JSON.parse(localStorage.getItem(KEY) || "{}")
+    );
+  } catch {
+    return {};
+  }
+}
+
+let amounts = readLocal();
+let sharedMode = false;
+let connecting = false;
+
+const state = {
+  tab:"all",
+  owner:"all",
+  rarity:"all",
+  search:""
+};
+
+// 通常カード85種類
 const groups = [
- [1,4,'PR'],[5,20,'R'],[21,29,'N'],[30,32,'ER'],
- [33,36,'PR'],[37,40,'R'],[41,49,'N'],[50,50,'ER'],
- [51,52,'PR'],[53,59,'R'],[60,70,'N'],[71,82,'PR'],[83,85,'N']
+  [1,4,"PR"],[5,20,"R"],[21,29,"N"],
+  [30,32,"ER"],[33,36,"PR"],[37,40,"R"],
+  [41,49,"N"],[50,50,"ER"],[51,52,"PR"],
+  [53,59,"R"],[60,70,"N"],[71,82,"PR"],
+  [83,85,"N"]
 ];
-let cards=[];
-for(const [first,last,rarity] of groups){
- for(let number=first;number<=last;number++){
-  const code='E1-'+String(number).padStart(2,'0');
-  cards.push({id:code,number:code,rarity,group:'normal',image:`https://dcd.aikatsu.com/encore/images/cardlist/card/${code}_${rarity}.webp`});
- }
+
+let cards = [];
+
+for (const [start,end,rarity] of groups) {
+  for (let n=start;n<=end;n++) {
+    const code = "E1-" + String(n).padStart(2,"0");
+    cards.push({
+      id:code,
+      number:code,
+      rarity,
+      group:"normal",
+      image:
+        "https://dcd.aikatsu.com/encore/" +
+        "images/cardlist/card/" +
+        code + "_" + rarity + ".webp"
+    });
+  }
 }
-const KEY='aikatsu-checker-owned-v1';
-let amounts={};
-try { amounts=JSON.parse(localStorage.getItem(KEY)||'{}'); if(!amounts||typeof amounts!=='object'||Array.isArray(amounts)) amounts={}; }
-catch(e){ amounts={}; }
-const state={tab:'all',owner:'all',rarity:'all',search:''};
-const $=id=>document.getElementById(id);
-// カードの表示サイズは所持枚数とは別のキーで保存する。
-const SIZE_KEY='aikatsu-checker-card-size-v1';
-const allowedSizes=['normal','small','tiny'];
-let selectedSize='normal';
-try{const saved=localStorage.getItem(SIZE_KEY);if(allowedSizes.includes(saved))selectedSize=saved;}catch(e){}
-function setCardSize(size){
- if(!allowedSizes.includes(size))return;
- selectedSize=size;
- $('cards').dataset.size=size;
- document.querySelectorAll('#sizeControls button[data-size]').forEach(b=>{
-  const selected=b.dataset.size===size;
-  b.classList.toggle('active',selected);
-  b.setAttribute('aria-pressed',String(selected));
- });
- try{localStorage.setItem(SIZE_KEY,size);}catch(e){}
-}
-$('sizeControls').addEventListener('click',e=>{
- const button=e.target.closest('button[data-size]');
- if(button)setCardSize(button.dataset.size);
-});
-setCardSize(selectedSize);
-// アクセサリーカードの番号。通常・パラレル・プロモすべてで共通判定する。
-// これ以外のカードでも画像ファイル自体が横長なら、自動的に右回り90度回転する。
+
+// アクセサリー判定
 const accessoryCodes = new Set([
- 'E1-04','E1-08','E1-16','E1-20','E1-36','E1-59',
- 'E1-74','E1-78','E1-82','EP-002','EP-005','EP-010','EP-022','EP-042'
+  "E1-04","E1-08","E1-16","E1-20",
+  "E1-36","E1-59","E1-74","E1-78",
+  "E1-82","EP-002","EP-005",
+  "EP-010","EP-022","EP-042"
 ]);
-function isAccessory(card){
- const code=(card.id||card.number||'').match(/^(E\d+-\d{2}|EP-\d{3})(?:_|$)/)?.[1];
- return card.orientation==='landscape'||accessoryCodes.has(code);
+
+function accessory(card) {
+  const code = String(card.id).match(
+    /^(E\d+-\d{2}|EP-\d{3})/
+  )?.[1];
+
+  return card.orientation === "landscape" ||
+    accessoryCodes.has(code);
 }
-function count(card){return Math.max(0,Math.floor(Number(amounts[card.id])||0));}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(amounts));}catch(e){alert('端末にデータを保存できませんでした。Safariの保存設定を確認してください。');}}
-function cardSet(){return cards.filter(c=>state.tab==='all'||c.group===state.tab);}
-function render(){
- const selection=cardSet();const owned=selection.filter(c=>count(c)>0).length;
- $('stats').textContent=`${owned} / ${selection.length} 種（${selection.length?(100*owned/selection.length).toFixed(1):'0.0'}%）`;
- const visible=selection.filter(c=>
-  (state.owner==='all'||(state.owner==='owned'?count(c)>0:count(c)===0))&&
-  (state.rarity==='all'||c.rarity===state.rarity)&&
-  (!state.search||c.number.toLowerCase().includes(state.search))
- );
- const root=$('cards');root.replaceChildren();
- if(!visible.length){const message=document.createElement('p');message.className='empty';message.textContent=state.tab==='parallel'||state.tab==='promo'?'この種類のカードは次のステップで追加します。':'該当するカードがありません。';root.append(message);return;}
- for(const card of visible){
-  const qty=count(card),button=document.createElement('button');
-  button.className='card'+(qty?' owned':'');button.type='button';button.setAttribute('aria-label',`${card.number} ${qty}枚所持。タップで切り替え`);
-  const img=document.createElement('img');img.alt=card.number;img.loading='lazy';
-  // アクセサリーは画像自体を右回りに90°回転（通常サイズの枠の中で表示）。
-  // 番号が未登録でも画像の元サイズが横長なら、画像読込後に自動判定する。
-  if(isAccessory(card))button.classList.add('rotate-image');
-  img.onload=()=>{
-   const sourceIsLandscape=img.naturalWidth>img.naturalHeight*1.06;
-   button.classList.toggle('rotate-image',isAccessory(card)||sourceIsLandscape);
+
+function quantity(card) {
+  return Math.max(0,
+    Math.floor(Number(amounts[card.id]) || 0));
+}
+
+// Firebase連携用
+window.cardApp = {
+  getLocal:readLocal,
+
+  getDisplayed:() => cleanAmounts(amounts),
+
+  showShared(data) {
+    sharedMode = true;
+    connecting = false;
+    amounts = cleanAmounts(data);
+    render();
+  },
+
+  showLocal() {
+    sharedMode = false;
+    connecting = false;
+    amounts = readLocal();
+    render();
+  },
+
+  setConnecting(value) {
+    connecting = value;
+  }
+};
+
+function save(cardId) {
+  if (sharedMode) {
+    window.cloudSave?.(cardId,amounts[cardId] || 0);
+  } else if (!connecting) {
+    localStorage.setItem(
+      KEY,JSON.stringify(amounts)
+    );
+  }
+}
+
+function render() {
+  const selected = cards.filter(c =>
+    state.tab === "all" || c.group === state.tab
+  );
+
+  const owned = selected.filter(c =>
+    quantity(c) > 0
+  ).length;
+
+  const percent = selected.length
+    ? (owned / selected.length * 100).toFixed(1)
+    : "0.0";
+
+  $("stats").textContent =
+    `${owned} / ${selected.length} 種（${percent}%）`;
+
+  const visible = selected.filter(c => {
+    if (state.owner === "owned" && !quantity(c))
+      return false;
+    if (state.owner === "missing" && quantity(c))
+      return false;
+    if (state.rarity !== "all" &&
+        state.rarity !== c.rarity)
+      return false;
+    if (state.search &&
+        !c.number.toLowerCase().includes(state.search))
+      return false;
+    return true;
+  });
+
+  const root = $("cards");
+  root.replaceChildren();
+
+  if (!visible.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "該当するカードがありません";
+    root.append(p);
+    return;
+  }
+
+  for (const card of visible) {
+    const n = quantity(card);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "card" + (n ? " owned" : "");
+    button.dataset.code = card.number;
+    button.setAttribute(
+      "aria-label",`${card.number} ${n}枚所持`
+    );
+
+    if (accessory(card)) button.classList.add("rotate");
+
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.alt = card.number;
+    img.src = card.image;
+
+    img.onload = () => {
+      if (img.naturalWidth >
+          img.naturalHeight * 1.06) {
+        button.classList.add("rotate");
+      }
+    };
+
+    img.onerror = () => button.classList.add("broken");
+    button.append(img);
+
+    if (n > 0) {
+      const badge = document.createElement("span");
+      badge.className = "count";
+      badge.textContent = n;
+      badge.onclick = e => {
+        e.stopPropagation();
+        editCount(card);
+      };
+      button.append(badge);
+    }
+
+    button.onclick = () => {
+      if (connecting) {
+        alert("共有リストの読み込みが終わってから操作してね");
+        return;
+      }
+
+      amounts[card.id] = quantity(card) ? 0 : 1;
+      save(card.id);
+      render();
+    };
+
+    button.oncontextmenu = e => {
+      e.preventDefault();
+      editCount(card);
+    };
+
+    root.append(button);
+  }
+}
+
+function editCount(card) {
+  if (connecting) return;
+
+  const value = prompt(
+    `${card.number} の所持枚数（0～999）`,
+    String(quantity(card))
+  );
+
+  if (value === null) return;
+
+  if (!/^\d{1,3}$/.test(value)) {
+    alert("0～999の整数を入力してね");
+    return;
+  }
+
+  amounts[card.id] = Number(value);
+  save(card.id);
+  render();
+}
+
+// タブ
+$("tabs").onclick = e => {
+  const b = e.target.closest("[data-tab]");
+  if (!b) return;
+
+  state.tab = b.dataset.tab;
+
+  document.querySelectorAll("[data-tab]").forEach(x =>
+    x.classList.toggle("active",x === b)
+  );
+  render();
+};
+
+// 表示サイズ
+const validSizes = ["normal","small","tiny"];
+let size = localStorage.getItem(SIZE_KEY) || "normal";
+
+function changeSize(value) {
+  if (!validSizes.includes(value)) return;
+
+  size = value;
+  $("cards").className =
+    value === "normal" ? "" : value;
+
+  document.querySelectorAll("[data-size]").forEach(b =>
+    b.classList.toggle("active",b.dataset.size === value)
+  );
+
+  localStorage.setItem(SIZE_KEY,value);
+}
+
+$("sizeBar").onclick = e => {
+  const b = e.target.closest("[data-size]");
+  if (b) changeSize(b.dataset.size);
+};
+
+changeSize(size);
+
+// 絞り込み
+$("filterToggle").onclick = () => {
+  $("filters").classList.toggle("open");
+};
+
+function setupChips(container,key,attribute) {
+  $(container).onclick = e => {
+    const b = e.target.closest(`[${attribute}]`);
+    if (!b) return;
+
+    state[key] = b.getAttribute(attribute);
+
+    $(container).querySelectorAll("button").forEach(x =>
+      x.classList.toggle("active",x === b)
+    );
+
+    render();
   };
-  img.src=card.image;
-  img.onerror=()=>button.classList.add('broken');
-  button.append(img);
-  const label=document.createElement('span');label.className='id-label';label.textContent=card.number;button.append(label);
-  if(qty){
-   const badge=document.createElement('span');badge.className='count';badge.textContent=String(qty);badge.title='所持枚数を変更';
-   badge.addEventListener('click',e=>{e.stopPropagation();editCount(card);});button.append(badge);
+}
+
+setupChips("ownerChips","owner","data-owner");
+setupChips("rarityChips","rarity","data-rarity");
+
+$("search").oninput = e => {
+  state.search = e.target.value.trim().toLowerCase();
+  render();
+};
+
+// バックアップ
+$("exportBtn").onclick = () => {
+  const data = JSON.stringify({
+    app:"aikatsu-card-checker",
+    version:1,
+    amounts,
+    exportedAt:new Date().toISOString()
+  },null,2);
+
+  const blob = new Blob([data],{
+    type:"application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "aikatsu-card-backup.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url),2000);
+};
+
+$("importBtn").onclick = () => $("importFile").click();
+
+$("importFile").onchange = async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const json = JSON.parse(await file.text());
+    if (json.app !== "aikatsu-card-checker" ||
+        !json.amounts ||
+        typeof json.amounts !== "object" ||
+        Array.isArray(json.amounts)) {
+      throw Error("バックアップ形式が違います");
+    }
+
+    const restored = cleanAmounts(json.amounts);
+
+    if (sharedMode) {
+      if (confirm(
+        "3人の共有リスト全体を、このバックアップで" +
+        "上書きしますか？"
+      )) {
+        await window.cloudReplace(restored);
+      }
+    } else if (!connecting) {
+      if (confirm(
+        "この端末の所持データを置き換えますか？"
+      )) {
+        amounts = restored;
+        localStorage.setItem(
+          KEY,JSON.stringify(amounts)
+        );
+        render();
+      }
+    }
+  } catch (err) {
+    alert("読み込み失敗：" + err.message);
   }
-  button.addEventListener('click',()=>{amounts[card.id]=count(card)?0:1;persist();render();});
-  button.addEventListener('contextmenu',e=>{e.preventDefault();editCount(card);});
-  root.append(button);
- }
-}
-function editCount(card){
- const entered=prompt(`${card.number} の所持枚数（0～999）`,String(count(card)));
- if(entered===null)return;
- if(!/^\d{1,3}$/.test(entered)){alert('0～999の整数を入力してください。');return;}
- amounts[card.id]=Number(entered);persist();render();
-}
-$('tabs').addEventListener('click',e=>{
- const button=e.target.closest('button[data-tab]');if(!button)return;
- state.tab=button.dataset.tab;
- document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b===button));render();
-});
-$('toggleFilters').addEventListener('click',()=>{
- const open=$('filters').classList.toggle('open');$('toggleFilters').textContent=open?'絞り込み ▴':'絞り込み ▾';
-});
-function attachChips(container,key,attribute){
- $(container).addEventListener('click',e=>{
-  const button=e.target.closest(`button[${attribute}]`);if(!button)return;
-  state[key]=button.getAttribute(attribute);
-  document.querySelectorAll(`#${container} button`).forEach(b=>b.classList.toggle('selected',b===button));render();
- });
-}
-attachChips('ownershipFilters','owner','data-owner');
-attachChips('rarityFilters','rarity','data-rarity');
-$('search').addEventListener('input',e=>{state.search=e.target.value.trim().toLowerCase();render();});
-$('export').addEventListener('click',()=>{
- const data=JSON.stringify({app:'aikatsu-card-checker',version:1,amounts,exportedAt:new Date().toISOString()},null,2);
- const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
- const a=document.createElement('a');a.href=url;a.download='aikatsu-card-backup.json';a.click();
- setTimeout(()=>URL.revokeObjectURL(url),2000);
-});
-$('import').addEventListener('click',()=>$('importFile').click());
-$('importFile').addEventListener('change',async e=>{
- const file=e.target.files?.[0];if(!file)return;
- try{
-  const data=JSON.parse(await file.text());
-  if(data.app!=='aikatsu-card-checker'||!data.amounts||typeof data.amounts!=='object'||Array.isArray(data.amounts))throw Error('形式が違います');
-  const restored={};for(const [key,val] of Object.entries(data.amounts)){
-   if(typeof key==='string'&&key.length<50&&Number.isInteger(val)&&val>=0&&val<=999)restored[key]=val;
+
+  e.target.value = "";
+};
+
+// パラレル・プロモをcards.jsonから取り込む
+async function loadExtraCards() {
+  try {
+    const response = await fetch(
+      "./cards.json",
+      {cache:"no-store"}
+    );
+
+    if (!response.ok) return;
+
+    const extra = await response.json();
+    if (!Array.isArray(extra)) return;
+
+    const map = new Map(cards.map(c => [c.id,c]));
+
+    for (const c of extra) {
+      if (!c || typeof c.id !== "string" ||
+          typeof c.image !== "string" ||
+          !c.image.startsWith("https://")) continue;
+
+      if (!["normal","parallel","promo"]
+          .includes(c.group)) continue;
+
+      map.set(c.id,c);
+    }
+
+    cards = [...map.values()];
+    render();
+  } catch (err) {
+    console.error("カード一覧取得エラー",err);
   }
-  if(confirm('現在の所持データをバックアップの内容で置き換えますか？')){amounts=restored;persist();render();alert('復元しました');}
- }catch(err){alert('バックアップを読み込めませんでした。');}
- e.target.value='';
-});
-// cards.json を追加したら、通常・パラレル・プロモのカードデータを拡張できる
-fetch('./cards.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(list=>{
- if(!Array.isArray(list))return;
- const extra=list.filter(c=>c&&typeof c.id==='string'&&typeof c.image==='string'&&/^https:\/\//.test(c.image)&&['normal','parallel','promo'].includes(c.group));
- if(extra.length){const byId=new Map(cards.map(c=>[c.id,c]));extra.forEach(c=>byId.set(c.id,c));cards=Array.from(byId.values());render();}
-}).catch(()=>{});
+}
+
 render();
+loadExtraCards();
 </script>
-</body>
-<!-- Firebase同期機能：index.htmlの最後の </body> の直前に追加 -->
 
-<style>
-  #cloudBox {
-    background: #fff0f8;
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid #f2b5d5;
-    font-family: sans-serif;
-  }
-  #cloudBox input {
-    padding: 9px;
-    margin: 4px;
-    max-width: 220px;
-    border: 1px solid #e6a0c6;
-    border-radius: 8px;
-  }
-  #cloudBox button {
-    padding: 9px 13px;
-    margin: 4px;
-    background: #ec78b3;
-    color: white;
-    border: none;
-    border-radius: 9px;
-    cursor: pointer;
-  }
-  #cloudBox p {
-    font-size: 13px;
-  }
-</style>
-
-<section id="cloudBox">
-  <strong>♡ 3人の共有カードリスト ♡</strong>
-  <div id="cloudLoginArea">
-    <input id="cloudEmail" type="email"
-      placeholder="メールアドレス">
-    <input id="cloudPassword" type="password"
-      placeholder="パスワード">
-    <button id="cloudLoginButton">ログイン</button>
-  </div>
-  <div id="cloudUserArea" hidden>
-    <span id="cloudUserName"></span>
-    <button id="cloudLogoutButton">ログアウト</button>
-    <button id="cloudInitializeButton" hidden>
-      この端末の所持データを共有リストに登録
-    </button>
-  </div>
-  <p id="cloudStatus">Firebaseに接続しています…</p>
-</section>
-
+<!-- Firebase：ログインと3人のリアルタイム同期 -->
 <script type="module">
-import { initializeApp } from
-  "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import {initializeApp} from
+"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+} from
+"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {
   getFirestore,
@@ -327,183 +810,219 @@ import {
   onSnapshot,
   updateDoc,
   runTransaction,
+  setDoc,
   serverTimestamp,
   FieldPath
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+} from
+"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCp8FbMp9kjFi-pq8QyDpttj2qI5VV6Cr4",
-  authDomain: "aikatsu-card-checker.firebaseapp.com",
-  projectId: "aikatsu-card-checker",
-  storageBucket: "aikatsu-card-checker.firebasestorage.app",
-  messagingSenderId: "758109639935",
-  appId: "1:758109639935:web:c11235f2dc093cc594e8ca",
-  measurementId: "G-R10WLMNWH0"
+  apiKey:"AIzaSyCp8FbMp9kjFi-pq8QyDpttj2qI5VV6Cr4",
+  authDomain:"aikatsu-card-checker.firebaseapp.com",
+  projectId:"aikatsu-card-checker",
+  storageBucket:"aikatsu-card-checker.firebasestorage.app",
+  messagingSenderId:"758109639935",
+  appId:"1:758109639935:web:c11235f2dc093cc594e8ca",
+  measurementId:"G-R10WLMNWH0"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const sharedRef = doc(db, "sharedLists", "our-cards");
 
-const cloud = id => document.getElementById(id);
-const LOCAL_KEY = "aikatsu-checker-owned-v1";
+const sharedRef = doc(
+  db,"sharedLists","our-cards"
+);
 
-let cloudReady = false;
-let currentUser = null;
+const $ = id => document.getElementById(id);
+
 let unsubscribe = null;
+let signedIn = false;
+let ready = false;
 
 function status(message) {
-  cloud("cloudStatus").textContent = message;
+  $("syncStatus").textContent = message;
+  $("loginMessage").textContent = message;
 }
 
-function sanitize(data) {
-  const result = {};
-  if (!data || typeof data !== "object") return result;
-  for (const [key, value] of Object.entries(data)) {
-    if (Number.isInteger(value) &&
-        value >= 0 && value <= 999 &&
-        key.length < 100) {
-      result[key] = value;
-    }
+function errorText(error) {
+  if (error.code === "permission-denied") {
+    return "Firestoreのアクセスルールで拒否されました。UIDを確認してね。";
   }
-  return result;
+  return error.code || error.message;
 }
 
-function getLocalData() {
-  try {
-    return sanitize(JSON.parse(
-      localStorage.getItem(LOCAL_KEY) || "{}"
-    ));
-  } catch {
-    return {};
-  }
-}
-
-// 既存アプリから呼び出す同期機能
-window.__aikatsuShared = {
-  isReady: () => cloudReady,
-
-  saveCard: async (id, quantity) => {
-    if (!cloudReady) return;
-    try {
-      await updateDoc(
-        sharedRef,
-        new FieldPath("amounts", id),
-        quantity,
-        "updatedAt",
-        serverTimestamp()
-      );
-    } catch (error) {
-      status("保存エラー：" + error.message);
-    }
-  },
-
-  replaceAll: async () => {
-    throw new Error(
-      "共有データの一括上書きは安全のため無効です"
-    );
-  }
+$("loginToggle").onclick = () => {
+  $("loginPanel").classList.toggle("open");
 };
 
-// ログイン
-cloud("cloudLoginButton").onclick = async () => {
+$("loginForm").onsubmit = async e => {
+  e.preventDefault();
+
+  status("ログイン中…");
+
   try {
-    status("ログイン中…");
     await signInWithEmailAndPassword(
       auth,
-      cloud("cloudEmail").value.trim(),
-      cloud("cloudPassword").value
+      $("email").value.trim(),
+      $("password").value
     );
-    cloud("cloudPassword").value = "";
-  } catch (error) {
-    status("ログイン失敗：" + error.code);
+    $("password").value = "";
+  } catch (err) {
+    status("ログイン失敗：" + errorText(err));
   }
 };
 
-// ログアウト
-cloud("cloudLogoutButton").onclick = () => signOut(auth);
+$("logoutBtn").onclick = async () => {
+  await signOut(auth);
+};
 
-// 初回のみ共有データを作成
-cloud("cloudInitializeButton").onclick = async () => {
-  if (!currentUser || cloudReady) return;
+// カード1枚の変更をクラウドに保存
+window.cloudSave = async (id,qty) => {
+  if (!ready) return;
 
-  const local = getLocalData();
-  const total = Object.values(local).filter(v => v > 0).length;
+  try {
+    await updateDoc(
+      sharedRef,
+      new FieldPath("amounts",id),
+      qty,
+      "updatedAt",
+      serverTimestamp()
+    );
+  } catch (err) {
+    status("同期失敗：" + errorText(err));
+    alert("カードの保存に失敗しました");
+  }
+};
+
+// バックアップから共有リストを上書き
+window.cloudReplace = async data => {
+  if (!ready) throw Error("共有リスト未接続");
+
+  await setDoc(sharedRef,{
+    amounts:data,
+    updatedAt:serverTimestamp()
+  });
+
+  status("共有データを復元しました");
+};
+
+// 初回の共有リスト作成
+$("initBtn").onclick = async () => {
+  if (!signedIn || ready) return;
+
+  const local = window.cardApp.getLocal();
+
+  const total = Object.values(local)
+    .filter(n => n > 0).length;
 
   if (!confirm(
-    `この端末の所持記録（${total}種類）を` +
+    `このパソコンの所持記録（${total}種類）を` +
     "3人の共有リストに登録しますか？"
   )) return;
 
+  $("initBtn").disabled = true;
+
   try {
-    await runTransaction(db, async transaction => {
+    await runTransaction(db,async transaction => {
       const snapshot = await transaction.get(sharedRef);
 
       if (snapshot.exists()) {
-        throw new Error("共有リストはすでに存在します");
+        throw Error("共有リストはすでに作成されています");
       }
 
-      transaction.set(sharedRef, {
-        amounts: local,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+      transaction.set(sharedRef,{
+        amounts:local,
+        createdAt:serverTimestamp(),
+        updatedAt:serverTimestamp()
       });
     });
 
-    status("共有リストを作成しました！");
-  } catch (error) {
-    status("初期登録エラー：" + error.message);
+    status("共有リストを作成しました");
+  } catch (err) {
+    status("初期登録失敗：" + errorText(err));
+  } finally {
+    $("initBtn").disabled = false;
   }
 };
 
-// ログイン状態を監視
-onAuthStateChanged(auth, user => {
+// ログイン状態と共有データを監視
+onAuthStateChanged(auth,user => {
+
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
   }
 
-  currentUser = user;
-  cloudReady = false;
+  ready = false;
+  signedIn = !!user;
 
-  cloud("cloudLoginArea").hidden = !!user;
-  cloud("cloudUserArea").hidden = !user;
-  cloud("cloudInitializeButton").hidden = true;
+  $("loginForm").style.display =
+    user ? "none" : "block";
+
+  $("userPanel").style.display =
+    user ? "block" : "none";
+
+  $("initPanel").style.display = "none";
 
   if (!user) {
-    status("未ログイン");
-    if (window.__aikatsuLocal) {
-      window.__aikatsuLocal.restoreView();
-    }
+    window.cardApp.showLocal();
+    status("クラウド：未ログイン");
     return;
   }
 
-  cloud("cloudUserName").textContent = user.email;
-  status("共有データを読み込み中…");
+  $("userName").textContent = user.email;
+  window.cardApp.setConnecting(true);
+  status("共有リストを読み込み中…");
 
-  unsubscribe = onSnapshot(sharedRef, snapshot => {
-    if (snapshot.exists()) {
-      cloudReady = true;
-      cloud("cloudInitializeButton").hidden = true;
+  unsubscribe = onSnapshot(
+    sharedRef,
+    snapshot => {
 
-      const shared = sanitize(snapshot.data().amounts);
+      if (snapshot.exists()) {
+        ready = true;
 
-      if (window.__aikatsuLocal) {
-        window.__aikatsuLocal.setView(shared);
+        $("initPanel").style.display = "none";
+
+        const data = snapshot.data();
+        window.cardApp.showShared(
+          data.amounts || {}
+        );
+
+        status(
+          snapshot.metadata.fromCache
+          ? "共有リスト（オフライン）"
+          : "♡ 3人の共有リスト：同期中"
+        );
+
+      } else if (!snapshot.metadata.fromCache) {
+        ready = false;
+        window.cardApp.showLocal();
+
+        // 初期登録用の表示
+        window.cardApp.setConnecting(true);
+
+        $("initPanel").style.display = "block";
+        $("loginPanel").classList.add("open");
+
+        status("共有リストの初期登録待ち");
       }
 
-      status("♡ 3人の共有リストに接続中");
-    } else {
-      cloudReady = false;
-      cloud("cloudInitializeButton").hidden = false;
-      status("共有リストの初期登録が必要です");
+    },
+    err => {
+      ready = false;
+      window.cardApp.setConnecting(true);
+      $("initPanel").style.display = "none";
+      $("loginPanel").classList.add("open");
+      status("同期エラー：" + errorText(err));
     }
-  }, error => {
-    cloudReady = false;
-    status("同期エラー：" + error.message);
-  });
+  );
+
+},err => {
+  status("認証エラー：" + errorText(err));
 });
+
 </script>
 
+</body>
 </html>
