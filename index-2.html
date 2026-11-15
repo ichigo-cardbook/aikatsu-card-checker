@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ef80b4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="アイカツカード">
+  <title>アイカツ！カード所持チェッカー</title>
+  <style>
+    :root { --pink:#eb65a4; --pale:#fff0f8; --ink:#463c49; }
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff8fc;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+    header{background:linear-gradient(115deg,#f774b3,#ffa3cd);color:white;text-align:center;padding:20px 12px 14px;box-shadow:0 2px 9px #c9478029}
+    h1{font-size:clamp(20px,4.4vw,30px);line-height:1.45;font-weight:650;margin:0 0 11px;letter-spacing:.05em;text-shadow:0 1px 2px #a9478060}
+    .toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+    button{font:inherit;cursor:pointer}
+    .toolbar button{background:white;color:#c83f86;border:0;border-radius:22px;padding:9px 13px;font-weight:650;font-size:13px}
+    .tabs{display:flex;background:white;position:sticky;top:0;z-index:3;box-shadow:0 1px 4px #dfb2cf66;overflow-x:auto}
+    .tabs button{flex:1;min-width:73px;background:none;border:0;border-bottom:3px solid transparent;padding:12px 8px;color:#999;font-weight:650;white-space:nowrap}
+    .tabs button.active{border-bottom-color:var(--pink);color:var(--pink)}
+    .summary{padding:13px 13px 9px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:white}
+    .summary strong{color:#de4791;font-variant-numeric:tabular-nums}
+    .outline{background:white;color:var(--pink);border:2px solid #f18bbd;border-radius:11px;padding:8px 12px;font-weight:700}
+    #filters{display:none;margin:0 12px 12px;padding:12px;background:white;border:1px solid #f6b9da;border-radius:12px;box-shadow:0 4px 12px #eab6d21a}
+    #filters.open{display:block}
+    .filter-line{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 15px}
+    .chip{padding:7px 11px;border-radius:25px;border:1px solid #e98bbf;background:#fff;color:#b45384;font-size:13px}
+    .chip.selected{background:var(--pink);color:#fff;border-color:var(--pink)}
+    input[type=search]{width:100%;border:1px solid #edb3d3;border-radius:9px;padding:11px;font-size:16px}
+    #cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 8px 26px;max-width:860px;margin:auto}
+    .card{position:relative;min-width:0;border:0;background:#f1e7ef;padding:0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px #8e678844;aspect-ratio:460 / 670;touch-action:manipulation}
+    /* 横長カードは2枚分の横幅を使う。画像は絶対に切り抜かない */
+    .card{align-self:start}
+    .card img{display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1);transition:filter .15s}
+    .card.landscape{grid-column:span 2;aspect-ratio:670 / 460;background:#fff}
+    /* 横向きのカードが縦向きの画像データとして保存されている場合は回転して表示 */
+    .card.landscape.rotate-source img{position:absolute;left:50%;top:50%;width:68.6567%;height:145.6522%;max-width:none;transform:translate(-50%,-50%) rotate(90deg)}
+    .card.owned img{filter:none}
+    .card .count{position:absolute;right:3px;top:3px;min-width:29px;height:29px;padding:0 5px;display:grid;place-items:center;border-radius:40px;background:#ff4f6d;color:white;font-size:15px;font-weight:700;border:1px solid #fff8}
+    .card .id-label{position:absolute;bottom:0;left:0;right:0;background:#ffffffd9;color:#5c3652;text-align:center;padding:3px 0;font-size:10px;font-weight:600;display:none}
+    .card.broken{display:flex;align-items:center;justify-content:center;padding:6px}
+    .card.broken .id-label{display:block}
+    .card.broken:before{content:'画像未取得';font-size:12px;color:#84627a}
+    .card.broken img{display:none}
+    .hint{padding:8px 13px;text-align:center;font-size:12px;color:#8e6680}
+    .empty{grid-column:1/-1;padding:45px 12px;text-align:center;color:#9a6687}
+    footer{text-align:center;padding:18px 14px 30px;font-size:11px;color:#927b8b}
+    footer a{color:#a34f7e}
+    @media(min-width:600px){#cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;padding:16px} .card .count{min-width:33px;height:33px}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>アイカツ！アンコール<br>カード所持率チェッカー</h1>
+  <div class="toolbar">
+    <button type="button" id="export">バックアップ保存</button>
+    <button type="button" id="import">データ復元</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+</header>
+<nav class="tabs" id="tabs" aria-label="カードの種類">
+  <button class="active" data-tab="all">すべて</button>
+  <button data-tab="normal">1弾</button>
+  <button data-tab="parallel">パラレル</button>
+  <button data-tab="promo">プロモ</button>
+</nav>
+<section class="summary">
+  <button class="outline" type="button" id="toggleFilters">絞り込み ▾</button>
+  <span>所持：<strong id="stats">0 / 85 種（0.0%）</strong></span>
+</section>
+<section id="filters" aria-label="絞り込み">
+  <label for="search">カード番号で検索</label>
+  <input id="search" type="search" placeholder="例：E1-01" autocomplete="off">
+  <p>所持状態</p><div class="filter-line" id="ownershipFilters">
+    <button class="chip selected" data-owner="all">すべて</button>
+    <button class="chip" data-owner="owned">所持</button>
+    <button class="chip" data-owner="missing">未所持</button>
+  </div>
+  <p>レアリティ</p><div class="filter-line" id="rarityFilters">
+    <button class="chip selected" data-rarity="all">すべて</button>
+    <button class="chip" data-rarity="PR">PR</button>
+    <button class="chip" data-rarity="R">R</button>
+    <button class="chip" data-rarity="N">N</button>
+    <button class="chip" data-rarity="ER">ER</button>
+  </div>
+</section>
+<div class="hint">カードをタップで所持／未所持切替。所持枚数の数字をタップすると枚数を変更できます。</div>
+<main id="cards" aria-live="polite"></main>
+<footer>カード画像 ©BNP/BANDAI, DENTSU, TV TOKYO ほか各権利者<br>
+画像は公式サイト上のファイルを参照しています。<br>
+<a href="https://dcd.aikatsu.com/encore/cardlist/" target="_blank" rel="noopener">公式カードリスト</a><br><br>
+個人用の試作版：1弾の通常85枚＋cards.jsonのパラレル・プロモに対応。</footer>
+<script>
+'use strict';
+// 公式カードリストで確認できた1弾85種類のレアリティ
+const groups = [
+ [1,4,'PR'],[5,20,'R'],[21,29,'N'],[30,32,'ER'],
+ [33,36,'PR'],[37,40,'R'],[41,49,'N'],[50,50,'ER'],
+ [51,52,'PR'],[53,59,'R'],[60,70,'N'],[71,82,'PR'],[83,85,'N']
+];
+let cards=[];
+for(const [first,last,rarity] of groups){
+ for(let number=first;number<=last;number++){
+  const code='E1-'+String(number).padStart(2,'0');
+  cards.push({id:code,number:code,rarity,group:'normal',image:`https://dcd.aikatsu.com/encore/images/cardlist/card/${code}_${rarity}.webp`});
+ }
+}
+const KEY='aikatsu-checker-owned-v1';
+let amounts={};
+try { amounts=JSON.parse(localStorage.getItem(KEY)||'{}'); if(!amounts||typeof amounts!=='object'||Array.isArray(amounts)) amounts={}; }
+catch(e){ amounts={}; }
+const state={tab:'all',owner:'all',rarity:'all',search:''};
+const $=id=>document.getElementById(id);
+// アクセサリーカードの番号。通常カード／パラレル／プロモで共通判定する。
+// 上記以外でも、画像自体が横長なら自動的に横向き表示する。
+const accessoryCodes = new Set([
+ 'E1-04','E1-08','E1-16','E1-20','E1-36','E1-59',
+ 'E1-74','E1-78','E1-82','EP-002','EP-005','EP-010','EP-022','EP-042'
+]);
+function isAccessory(card){
+ const code=(card.id||card.number||'').match(/^(E\d+-\d{2}|EP-\d{3})(?:_|$)/)?.[1];
+ return card.orientation==='landscape'||accessoryCodes.has(code);
+}
+function count(card){return Math.max(0,Math.floor(Number(amounts[card.id])||0));}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(amounts));}catch(e){alert('端末にデータを保存できませんでした。Safariの保存設定を確認してください。');}}
+function cardSet(){return cards.filter(c=>state.tab==='all'||c.group===state.tab);}
+function render(){
+ const selection=cardSet();const owned=selection.filter(c=>count(c)>0).length;
+ $('stats').textContent=`${owned} / ${selection.length} 種（${selection.length?(100*owned/selection.length).toFixed(1):'0.0'}%）`;
+ const visible=selection.filter(c=>
+  (state.owner==='all'||(state.owner==='owned'?count(c)>0:count(c)===0))&&
+  (state.rarity==='all'||c.rarity===state.rarity)&&
+  (!state.search||c.number.toLowerCase().includes(state.search))
+ );
+ const root=$('cards');root.replaceChildren();
+ if(!visible.length){const message=document.createElement('p');message.className='empty';message.textContent=state.tab==='parallel'||state.tab==='promo'?'この種類のカードは次のステップで追加します。':'該当するカードがありません。';root.append(message);return;}
+ for(const card of visible){
+  const qty=count(card),button=document.createElement('button');
+  button.className='card'+(qty?' owned':'')+(isAccessory(card)?' landscape':'');button.type='button';button.setAttribute('aria-label',`${card.number} ${qty}枚所持。タップで切り替え`);
+  const img=document.createElement('img');img.alt=card.number;img.loading='lazy';
+  img.onload=()=>{
+   const sourceIsLandscape=img.naturalWidth>img.naturalHeight*1.06;
+   if(sourceIsLandscape||isAccessory(card)) button.classList.add('landscape');
+   // アクセサリー画像が縦長のファイルなら、画像そのものを90度回転
+   button.classList.toggle('rotate-source',isAccessory(card)&&img.naturalHeight>img.naturalWidth*1.06);
+  };
+  img.src=card.image;
+  img.onerror=()=>button.classList.add('broken');
+  button.append(img);
+  const label=document.createElement('span');label.className='id-label';label.textContent=card.number;button.append(label);
+  if(qty){
+   const badge=document.createElement('span');badge.className='count';badge.textContent=String(qty);badge.title='所持枚数を変更';
+   badge.addEventListener('click',e=>{e.stopPropagation();editCount(card);});button.append(badge);
+  }
+  button.addEventListener('click',()=>{amounts[card.id]=count(card)?0:1;persist();render();});
+  button.addEventListener('contextmenu',e=>{e.preventDefault();editCount(card);});
+  root.append(button);
+ }
+}
+function editCount(card){
+ const entered=prompt(`${card.number} の所持枚数（0～999）`,String(count(card)));
+ if(entered===null)return;
+ if(!/^\d{1,3}$/.test(entered)){alert('0～999の整数を入力してください。');return;}
+ amounts[card.id]=Number(entered);persist();render();
+}
+$('tabs').addEventListener('click',e=>{
+ const button=e.target.closest('button[data-tab]');if(!button)return;
+ state.tab=button.dataset.tab;
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b===button));render();
+});
+$('toggleFilters').addEventListener('click',()=>{
+ const open=$('filters').classList.toggle('open');$('toggleFilters').textContent=open?'絞り込み ▴':'絞り込み ▾';
+});
+function attachChips(container,key,attribute){
+ $(container).addEventListener('click',e=>{
+  const button=e.target.closest(`button[${attribute}]`);if(!button)return;
+  state[key]=button.getAttribute(attribute);
+  document.querySelectorAll(`#${container} button`).forEach(b=>b.classList.toggle('selected',b===button));render();
+ });
+}
+attachChips('ownershipFilters','owner','data-owner');
+attachChips('rarityFilters','rarity','data-rarity');
+$('search').addEventListener('input',e=>{state.search=e.target.value.trim().toLowerCase();render();});
+$('export').addEventListener('click',()=>{
+ const data=JSON.stringify({app:'aikatsu-card-checker',version:1,amounts,exportedAt:new Date().toISOString()},null,2);
+ const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download='aikatsu-card-backup.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),2000);
+});
+$('import').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  if(data.app!=='aikatsu-card-checker'||!data.amounts||typeof data.amounts!=='object'||Array.isArray(data.amounts))throw Error('形式が違います');
+  const restored={};for(const [key,val] of Object.entries(data.amounts)){
+   if(typeof key==='string'&&key.length<50&&Number.isInteger(val)&&val>=0&&val<=999)restored[key]=val;
+  }
+  if(confirm('現在の所持データをバックアップの内容で置き換えますか？')){amounts=restored;persist();render();alert('復元しました');}
+ }catch(err){alert('バックアップを読み込めませんでした。');}
+ e.target.value='';
+});
+// cards.json を追加したら、通常・パラレル・プロモのカードデータを拡張できる
+fetch('./cards.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(list=>{
+ if(!Array.isArray(list))return;
+ const extra=list.filter(c=>c&&typeof c.id==='string'&&typeof c.image==='string'&&/^https:\/\//.test(c.image)&&['normal','parallel','promo'].includes(c.group));
+ if(extra.length){const byId=new Map(cards.map(c=>[c.id,c]));extra.forEach(c=>byId.set(c.id,c));cards=Array.from(byId.values());render();}
+}).catch(()=>{});
+render();
+</script>
+</body>
+</html>
