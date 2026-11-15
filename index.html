@@ -22,6 +22,10 @@
     .tabs button.active{border-bottom-color:var(--pink);color:var(--pink)}
     .summary{padding:13px 13px 9px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:white}
     .summary strong{color:#de4791;font-variant-numeric:tabular-nums}
+    .size-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;padding-top:2px}
+    .size-controls .size-label{font-size:12px;font-weight:650;color:#8c6982;margin-right:3px}
+    .size-controls button{border:1px solid #e69abc;color:#b74886;background:white;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:650;line-height:1.2}
+    .size-controls button.active{background:var(--pink);border-color:var(--pink);color:#fff}
     .outline{background:white;color:var(--pink);border:2px solid #f18bbd;border-radius:11px;padding:8px 12px;font-weight:700}
     #filters{display:none;margin:0 12px 12px;padding:12px;background:white;border:1px solid #f6b9da;border-radius:12px;box-shadow:0 4px 12px #eab6d21a}
     #filters.open{display:block}
@@ -30,6 +34,9 @@
     .chip.selected{background:var(--pink);color:#fff;border-color:var(--pink)}
     input[type=search]{width:100%;border:1px solid #edb3d3;border-radius:9px;padding:11px;font-size:16px}
     #cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 8px 26px;max-width:860px;margin:auto}
+    /* iPhone: 標準3列／小4列／極小5列。カード全体の縦横比は変えない。 */
+    #cards[data-size="small"]{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px 6px 26px}
+    #cards[data-size="tiny"]{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:6px 4px 26px}
     .card{position:relative;min-width:0;border:0;background:#f1e7ef;padding:0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px #8e678844;aspect-ratio:460 / 670;touch-action:manipulation}
     /* すべてのカードは同じ縦長サイズ・同じ3列（PCでは5列）に揃える。 */
     .card{align-self:start}
@@ -46,6 +53,8 @@
     }
     .card.owned img{filter:none}
     .card .count{position:absolute;right:3px;top:3px;min-width:29px;height:29px;padding:0 5px;display:grid;place-items:center;border-radius:40px;background:#ff4f6d;color:white;font-size:15px;font-weight:700;border:1px solid #fff8}
+    #cards[data-size="small"] .count{min-width:24px;height:24px;font-size:12px}
+    #cards[data-size="tiny"] .count{min-width:20px;height:20px;font-size:11px;right:2px;top:2px;padding:0 3px}
     .card .id-label{position:absolute;bottom:0;left:0;right:0;background:#ffffffd9;color:#5c3652;text-align:center;padding:3px 0;font-size:10px;font-weight:600;display:none}
     .card.broken{display:flex;align-items:center;justify-content:center;padding:6px}
     .card.broken .id-label{display:block}
@@ -55,7 +64,12 @@
     .empty{grid-column:1/-1;padding:45px 12px;text-align:center;color:#9a6687}
     footer{text-align:center;padding:18px 14px 30px;font-size:11px;color:#927b8b}
     footer a{color:#a34f7e}
-    @media(min-width:600px){#cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;padding:16px} .card .count{min-width:33px;height:33px}}
+    @media(min-width:600px){
+      #cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:13px;padding:16px}
+      #cards[data-size="small"]{grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;padding:13px}
+      #cards[data-size="tiny"]{grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;padding:10px}
+      #cards[data-size="normal"] .count{min-width:33px;height:33px}
+    }
   </style>
 </head>
 <body>
@@ -76,6 +90,12 @@
 <section class="summary">
   <button class="outline" type="button" id="toggleFilters">絞り込み ▾</button>
   <span>所持：<strong id="stats">0 / 85 種（0.0%）</strong></span>
+  <div class="size-controls" id="sizeControls" aria-label="カードの表示サイズ">
+    <span class="size-label">表示サイズ</span>
+    <button type="button" data-size="normal" class="active" aria-pressed="true">標準</button>
+    <button type="button" data-size="small" aria-pressed="false">小さめ</button>
+    <button type="button" data-size="tiny" aria-pressed="false">もっと小さく</button>
+  </div>
 </section>
 <section id="filters" aria-label="絞り込み">
   <label for="search">カード番号で検索</label>
@@ -120,6 +140,27 @@ try { amounts=JSON.parse(localStorage.getItem(KEY)||'{}'); if(!amounts||typeof a
 catch(e){ amounts={}; }
 const state={tab:'all',owner:'all',rarity:'all',search:''};
 const $=id=>document.getElementById(id);
+// カードの表示サイズは所持枚数とは別のキーで保存する。
+const SIZE_KEY='aikatsu-checker-card-size-v1';
+const allowedSizes=['normal','small','tiny'];
+let selectedSize='normal';
+try{const saved=localStorage.getItem(SIZE_KEY);if(allowedSizes.includes(saved))selectedSize=saved;}catch(e){}
+function setCardSize(size){
+ if(!allowedSizes.includes(size))return;
+ selectedSize=size;
+ $('cards').dataset.size=size;
+ document.querySelectorAll('#sizeControls button[data-size]').forEach(b=>{
+  const selected=b.dataset.size===size;
+  b.classList.toggle('active',selected);
+  b.setAttribute('aria-pressed',String(selected));
+ });
+ try{localStorage.setItem(SIZE_KEY,size);}catch(e){}
+}
+$('sizeControls').addEventListener('click',e=>{
+ const button=e.target.closest('button[data-size]');
+ if(button)setCardSize(button.dataset.size);
+});
+setCardSize(selectedSize);
 // アクセサリーカードの番号。通常・パラレル・プロモすべてで共通判定する。
 // これ以外のカードでも画像ファイル自体が横長なら、自動的に右回り90度回転する。
 const accessoryCodes = new Set([
